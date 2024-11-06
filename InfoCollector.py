@@ -14,9 +14,6 @@ class InfoCollector(BaseAgent):
         super().__init__()
         self.input_query = input_query
         self.feedback = ""
-        # Load configuration from YAML file
-        with open('/Users/feiou/llmopt/ev_agents/update_model/EV_agents/config.yaml', 'r', encoding='utf-8') as file:
-            self.config = yaml.safe_load(file)
         
         # Extract prompt templates and JSON schemas
         self.prompt_template1 = PromptTemplate.from_template(self.config['prompt_templates']['user_template'])
