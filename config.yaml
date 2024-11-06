@@ -1,0 +1,229 @@
+# config.yaml
+Basic_Model_Config:
+  model: "Your Model Name"
+  API_KEY: "Your API key"
+  API_BASE_URL: "Your API base URL"
+
+
+
+
+prompt_templates:
+  user_template: |
+    """
+    你是一名电车充电服务的AI助手，请根据用户输入 {query} 以及用户反馈 {feedback} ，严格按照以下JSON Schema{json_shema} 输出参数
+    请注意不要预设任何信息,不要将任何explanation信息包含在输出中的json文件中
+    
+    example output
+    {{'持续时长': 9, '目标电量': 90, '期望续航': 100, '快慢充偏好': True, '用户预算': 220}}
+    """
+  ev_template: |
+    """
+    你是一名电车充电服务的AI助手，请根据用户输入 {query} 以及数据库中提取到的电车相关参数信息 {context} ，严格按照以下JSON Schema{json_shema} 输出
+    请注意不要预设任何信息,不要将任何explanation信息包含在输出中的json文件中
+    
+    example output:
+    
+    ```json
+    {{'品牌型号': '比亚迪海豹500km','电池容量': 61.4,'续航里程': 550,'快充支持': True,'慢充支持': True}}
+    ```
+    """
+  modeling_exp_template: |
+    """
+    你是一名在电车充电领域帮助提取建模参数的AI助手，请根据数学优化问题的标准描述{OP_descrpition}中，提取数学优化问题的建模参数表达式，包括目标函数，决策变量以及约束条件。
+    请严格按照以下JSON Schema{json_shema} 输出json格式的output
+    请注意不要预设任何信息,不要将任何explanation信息包含在输出中的json文件中
+    
+    example output:
+    
+    ```json
+    {{'obj': 'minimize c^t * P','decision variable': t^1,'constraint': {{constraint_1: '$\sum_{{i=1}}^{{T}} t^{{1}}_i \leq T$'' , constraint_2: \sum_{{i=1}}^{{T}} x_{{f}} t^1_{{i}} \geq P, constraint_3: C\leq C_budget}}','variable_explanation': 'where  $C = c P$, c is real time changing electricity price, and dim(c) = T and $t_1$ is time for fast charging $t^{{1}}_{{i}}$ = [0,1], $0\leq i \leq T$, and $T = dim(t^1)$, where 0 represent no charging in time slot and 1 represent charging. $C = c P$, c is real time changing electricity price, and dim(c) = T $x_f$ is fast charging power $P_{{req}}$ is required energy for charging. $C\leq C_b$, where $C_{{b}}$ is the budget of user'}}
+    ```
+    """
+  
+  modeling_value_template: |
+    """
+    你是一名在电车充电领域帮助提取建模参数的AI助手，请根据提取到的参数表达式{modeling_ex_descrpition},从这组用户参数 {parameters}中选取和数学优化问题相关的参数以及数值，保留并输出相关部分参数
+    请严格按照以下JSON Schema{json_shema} 输出json格式的output
+    请注意不要预设任何信息,不要将任何explanation信息包含在输出中的json文件中
+    
+    example output:
+    
+    ```json
+    {{'停车时长':8 , '电池容量': 61.4, '所需电量': 70.5, '用户预算': 100,'快慢充偏好': True}}
+    ```
+    """
+
+  math_check_template : |
+    """
+    你是一名数学专家AI助手，请检查建模参数 {modeling_parameter} 和数学问题描述 {OP_descrpition} 是否存在逻辑匹配问题 ，如果存在问题，请提出修改意见并按照修改意见按照相同格式重新输出modeling_parameter，如果没问题请输出原的modeling_parameter，不要改变他的结构。
+    严格按照以下JSON Schema{json_shema} 输出建模参数
+    请注意不要预设任何信息,不要将任何explanation信息包含在输出中的json文件中
+    
+    example output:
+    
+    ```json
+    {{'obj': 'minimize c^t * P','decision variable': t^1,'constraint': {{constraint_1: '$\sum_{{i=1}}^{{T}} t^{{1}}_i \leq T$'' , constraint_2: \sum_{{i=1}}^{{T}} x_{{f}} t^1_{{i}} \geq P, constraint_3: C\leq C_budget}}','variable_explanation': 'where  $C = c P$, c is real time changing electricity price, and dim(c) = T and $t_1$ is time for fast charging $t^{{1}}_{{i}}$ = [0,1], $0\leq i \leq T$, and $T = dim(t^1)$, where 0 represent no charging in time slot and 1 represent charging. $C = c P$, c is real time changing electricity price, and dim(c) = T $x_f$ is fast charging power $P_{{req}}$ is required energy for charging. $C\leq C_b$, where $C_{{b}}$ is the budget of user'}}
+    ```
+    
+  code_template: |
+    """
+    你是一名代码专家，请根据建模参数表达式 {modeling_exp} 和参数数值{modeling_para_value},编写商用求解器gurobi能够理解的代码，得到最优解.
+    请逐步解决这个问题，以下是编写gurobipy代码进行优化求解的步骤，请按照这个步骤生成代码：
+
+    1.建立新模型，m = Model(name=“”), name是模型的名称, 返回值m是一个model对象，初始情况下没有变量和约束条件
+    2.建立决策变量：m.addMVar ( shape, lb=0.0, ub=float('inf'), obj=0.0, vtype=GRB.BINARY, name="" )，其中shape是变量的维度，lb，ub为变量的上下限，默认值为0和float('inf')obj变量在目标函数中的系数。默认值为0.0，表示该变量在目标函数中不参与计算.vtype为决策变量的类型，默认值为`GRB.CONTINUOUS`，表示变量是连续的，可以设置为`GRB.BINARY`（二进制变量）、`GRB.INTEGER`（整数变量）,name为决策变量的名字
+    3.设立优化目标函数：m.setObjective ( expr, sense=None ),expr为目标函数的表达式，比如obj = np.array([1.0, 1.0, 2.0])，m.setObjective(obj @ x, GRB.MAXIMIZE)，表示了maximize目标函数  x +   y + 2 z，sense代表了优化方向，最大化GRB.MAXIMIZE，或是最小化GRB.MINIMIZE 目标函数
+    4.创建约束条件：m.addConstr ( constr, name="" ),为每个约束条件addConstr，其中constr是一个约束表达式，它定义了模型中的一个约束条件，例如x + y <= 1。name用于为添加的约束条件指定一个名称
+    5.优化模型：m.optimize(),启动优化算法
+    6.输出优化结果：例如 print(x.X)，print(f"Obj: {{m.ObjVal:g}}")
+
+    请输出你的代码块，example output format:
+    ```python
+    ...
+
+    ```
+    """
+
+  evaluate_template: |
+    """
+    你是一名负责评估代码质量，提出改进意见的评估者，请检查代码块 {code_block} 是否存在语法以及逻辑问题，如果存在问题，请提出修改意见。
+    改进意见以一段文字的形式输出，辅助改进代码。如果没有问题，请返回原代码块。
+
+    """
+  
+  refine_template: |
+    """
+    你是一个代码改进专家，请根据评估者提出的意见 {comment} 对代码块 {code_block} 进行更新，并重新输出更新后的代码块。
+
+    请输出更新后的代码，example output format:
+
+    ```python
+
+   
+    ```
+    """
+
+
+json_schemas:
+  user_schema: |
+    {
+      "type": "object",
+      "properties": {
+          "持续时长": {
+          "description": "电车充电的总持续时长 in hour,如果没有提及，输出None",
+          "type": ["number", "null"]
+          },
+          "目标电量": {
+          "description": "电车充电的目标电量，期望到达的百分比,如果没有提及，输出None",
+          "type": ["number", "null"]
+          },
+          "期望续航": {
+          "description": "电车充电后的期望续航里程 in km,如果没有提及，输出None",
+          "type": ["number", "null"]
+          },
+          "快慢充偏好": {
+          "description": "用户对快充和慢充的偏好，True表示偏好快充，False表示偏好慢充,如果没有提及，输出None",
+          "type": ["boolean", "null"]
+          },
+          "用户预算": {
+          "description": "用户对充电的预算,如果没有提及，输出None",
+          "type": ["number", "null"]
+          }
+      }
+      }
+  ev_schema: |
+    {
+      "type": "object",
+      "properties": {
+          "品牌型号": {
+          "type": "string",
+          "description": "汽车的品牌型号"
+          },
+          "电池容量": {
+          "type": "number",
+          "description": "汽车的电池容量 in kwh"
+          },
+          "续航里程": {
+          "type": "number",
+          "description": "汽车的续航里程 in km"
+          },
+          "快充支持": {
+          "type": "boolean",
+          "description": "汽车是否支持快充"
+          },
+          "慢充支持": {
+          "type": "boolean",
+          "description": "汽车是否支持慢充"
+          },
+      }
+    }
+  modeling_exp_schema: |
+    {
+      "type": "object",
+      "properties": {
+          "obj": {
+          "type": "string",
+          "description": "目标函数，minimize or maximize c P"
+          },
+          "decision variable": {
+          "type": "string",
+          "description": "决策变量"
+          },
+          "constraint_expression": {
+          "type": "object",
+          "description": "约束条件表达式，以一个dictionary的形式输出，包含了所有constraint的表达式"
+          },
+          "variable_explanation": {
+          "type": "string",
+          "description": "变量的解释"
+          }
+      }
+    }
+
+  modeling_value_schema: |
+    {
+      "type": "object",
+      "properties": {
+          "相关约束参数1": {
+          "type": "number",
+          "description": "相关约束参数1"
+          },
+          "相关参数2": {
+          "type": "number",
+          "description": "相关约束参数2"
+          },
+          "相关参数3": {
+          "type": "number",
+          "description": "相关约束参数3"
+          }
+      }
+    }
+
+math_problem:
+  problem_1: |
+    min $c P$,
+    subject to:
+
+    1. $\sum_{i=1}^{T} t^{1}_i$  $\leq T$
+    2. $P= \sum_{i=1}^{T} x_{f} t^{1}_{i} \geq P_{req}$
+    3. $C\leq C_b$
+
+    where $c$ is real time changing electricity price, and dim(c) = T, and
+    $t_1$ is time for fast charging, $t^{1}_{i}$ = [0,1], $0\leq i \leq T$, and $T = dim(t^1)$, and
+    $x_f$ is fast charging power, and
+    $P_{req}$ is required energy for charging, and
+    $C\leq C_b$, where $C_{b}$ is the budget of user
+
+  problem_2: |
+    min $c P$,
+    subject to:
+
+    1. $\sum_{i=1}^{T} t^{2}_i$  $\leq T$
+    2. $P= \sum_{i=1}^{T} x_{s} t^{2}_{i} \geq P_{req}$
+    3. $C\leq C_b$
+
+    where $c$ is real time changing electricity price, and dim(c) = T, and
+    $t_2$ is time for slow charging $t^{2}_{i}$ = [0,1], $0\leq i \leq T$, and $T = dim(t^2)$, and
+    $x_s$ is slow charging power, and
+    $P_{req}$ is required energy for charging, and
+    $C\leq C_b$, where $C_{b}$ is the budget of user
