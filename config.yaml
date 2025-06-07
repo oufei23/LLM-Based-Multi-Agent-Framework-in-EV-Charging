@@ -1,13 +1,14 @@
 # config.yaml
 Basic_Model_Config:
-  model: "Your Model Name"
-  API_KEY: "Your API key"
-  API_BASE_URL: "Your API base URL"
+  model: "glm-4"
+  API_KEY: "YOUR_API_KEY"
+  API_BASE_URL: "your_BASE_URL"
 
 
 
 
 prompt_templates:
+
   user_template: |
     """
     你是一名电车充电服务的AI助手，请根据用户输入 {query} 以及用户反馈 {feedback} ，严格按照以下JSON Schema{json_shema} 输出参数
@@ -27,47 +28,58 @@ prompt_templates:
     {{'品牌型号': '比亚迪海豹500km','电池容量': 61.4,'续航里程': 550,'快充支持': True,'慢充支持': True}}
     ```
     """
-  modeling_exp_template: |
+
+  get_modeling_template: |
     """
-    你是一名在电车充电领域帮助提取建模参数的AI助手，请根据数学优化问题的标准描述{OP_descrpition}中，提取数学优化问题的建模参数表达式，包括目标函数，决策变量以及约束条件。
+    你是一名在电车充电领域帮助提取建模参数的AI助手，请根据数学优化问题的标准描述{OP_descrpition}中，提取
+    1.数学优化问题的目标函数表达式
+    2.数学优化问题中的决策变量表达式,即需要优化的变量，注意决策变量不是常量。
+    3.数学优化问题中的约束表达式
+    4.参数表达式中出现的常量的具体数值，从用户参数{user_para}中得到需要参数数值
+    5.参数表达式中变量的解释
+
     请严格按照以下JSON Schema{json_shema} 输出json格式的output
-    请注意不要预设任何信息,不要将任何explanation信息包含在输出中的json文件中
+
+    请注意不要预设任何信息，只输出json格式的内容
     
-    example output:
-    
-    ```json
-    {{'obj': 'minimize c^t * P','decision variable': t^1,'constraint': {{constraint_1: '$\sum_{{i=1}}^{{T}} t^{{1}}_i \leq T$'' , constraint_2: \sum_{{i=1}}^{{T}} x_{{f}} t^1_{{i}} \geq P, constraint_3: C\leq C_budget}}','variable_explanation': 'where  $C = c P$, c is real time changing electricity price, and dim(c) = T and $t_1$ is time for fast charging $t^{{1}}_{{i}}$ = [0,1], $0\leq i \leq T$, and $T = dim(t^1)$, where 0 represent no charging in time slot and 1 represent charging. $C = c P$, c is real time changing electricity price, and dim(c) = T $x_f$ is fast charging power $P_{{req}}$ is required energy for charging. $C\leq C_b$, where $C_{{b}}$ is the budget of user'}}
-    ```
-    """
-  
-  modeling_value_template: |
-    """
-    你是一名在电车充电领域帮助提取建模参数的AI助手，请根据提取到的参数表达式{modeling_ex_descrpition},从这组用户参数 {parameters}中选取和数学优化问题相关的参数以及数值，保留并输出相关部分参数
-    请严格按照以下JSON Schema{json_shema} 输出json格式的output
-    请注意不要预设任何信息,不要将任何explanation信息包含在输出中的json文件中
-    
-    example output:
-    
-    ```json
-    {{'停车时长':8 , '电池容量': 61.4, '所需电量': 70.5, '用户预算': 100,'快慢充偏好': True}}
-    ```
+
     """
 
-  math_check_template : |
+  modeling_refine_template : |
+  
     """
-    你是一名数学专家AI助手，请检查建模参数 {modeling_parameter} 和数学问题描述 {OP_descrpition} 是否存在逻辑匹配问题 ，如果存在问题，请提出修改意见并按照修改意见按照相同格式重新输出modeling_parameter，如果没问题请输出原的modeling_parameter，不要改变他的结构。
-    严格按照以下JSON Schema{json_shema} 输出建模参数
-    请注意不要预设任何信息,不要将任何explanation信息包含在输出中的json文件中
+    你是一名数学建模专家AI助手，请基于需要修正的建模参数 {modeling_parameters},数学问题描述 {OP_descrpition},用户参数{user_para}和修改意见{advices}重新提取修正建模参数,按照相同json格式重新输出修改后的modeling_parameter
+    你需要从数学问题描述{OP_descrpition}重新提取的参数如下：
+    1.数学优化问题的目标函数表达式
+    2.数学优化问题中的决策变量表达式,即需要优化的变量，注意决策变量不是常量。
+    3.数学优化问题中的约束表达式
+    4.参数表达式中出现的常量的具体数值，从用户参数{user_para}中得到需要参数数值
+    5.参数表达式中变量的解释
+    严格按照以下JSON Schema{json_shema} 输出修改过的建模参数。
     
-    example output:
-    
-    ```json
-    {{'obj': 'minimize c^t * P','decision variable': t^1,'constraint': {{constraint_1: '$\sum_{{i=1}}^{{T}} t^{{1}}_i \leq T$'' , constraint_2: \sum_{{i=1}}^{{T}} x_{{f}} t^1_{{i}} \geq P, constraint_3: C\leq C_budget}}','variable_explanation': 'where  $C = c P$, c is real time changing electricity price, and dim(c) = T and $t_1$ is time for fast charging $t^{{1}}_{{i}}$ = [0,1], $0\leq i \leq T$, and $T = dim(t^1)$, where 0 represent no charging in time slot and 1 represent charging. $C = c P$, c is real time changing electricity price, and dim(c) = T $x_f$ is fast charging power $P_{{req}}$ is required energy for charging. $C\leq C_b$, where $C_{{b}}$ is the budget of user'}}
-    ```
+    请注意不要预设任何信息，只输出json格式的内容.
+    """    
+
+  modeling_check_template: |
+
+    """
+
+    你是一名数学建模专家AI评估助手，请判断提取到的建模参数{modeling_parameters}是否和数学问题描述{OP_descrpition}以及用户参数数值{user_para}匹配.如果匹配，请输出1并给出解释，如果不匹配，请提供解释以及修改意见，并输出0
+    是否匹配的标准包括：
+    1.建模表达式中的目标函数是否与数学问题描述{OP_descrpition}中的目标函数完全匹配
+    2.决策变量是否与数学问题描述{OP_descrpition}中的决策变量匹配，通常情况下当前问题仅有1个决策变量
+    3.约束条件是否和数学问题描述{OP_descrpition}中的参数完全匹配，请确保参数表达式中出现的数值与用户参数数值{user_para}匹配。。
+    4.constant参数是否是完整，包含明确的数值，不要出现省略的情况，比如c = [0.75, 0.8, 0.78, 0.82, 0.85, 0.9, ...(user provided values)这种错误的省略表达
+    5.参数解释是否符合数学问题的描述{OP_descrpition}.
+    6.检查表达式是否具体，例如在输出结果中只出现表达式P是不正确的，需要具体P=...,具体表达式格式。
+
+    请注意不要预设任何信息,严格按照以下JSON Schema{json_shema}输出prediction result和comment，不要输出其他解释信息。
+
+    """
     
   code_template: |
     """
-    你是一名代码专家，请根据建模参数表达式 {modeling_exp} 和参数数值{modeling_para_value},编写商用求解器gurobi能够理解的代码，得到最优解.
+    你是一名代码专家，请根据建模参数{modeling_parameters},编写商用求解器gurobi能够理解的代码，得到最优解.
     请逐步解决这个问题，以下是编写gurobipy代码进行优化求解的步骤，请按照这个步骤生成代码：
 
     1.建立新模型，m = Model(name=“”), name是模型的名称, 返回值m是一个model对象，初始情况下没有变量和约束条件
@@ -77,6 +89,7 @@ prompt_templates:
     5.优化模型：m.optimize(),启动优化算法
     6.输出优化结果：例如 print(x.X)，print(f"Obj: {{m.ObjVal:g}}")
 
+    请注意，这个问题中慢充功率为7，快充功率为13
     请输出你的代码块，example output format:
     ```python
     ...
@@ -84,16 +97,19 @@ prompt_templates:
     ```
     """
 
-  evaluate_template: |
+  code_check_template: |
     """
-    你是一名负责评估代码质量，提出改进意见的评估者，请检查代码块 {code_block} 是否存在语法以及逻辑问题，如果存在问题，请提出修改意见。
-    改进意见以一段文字的形式输出，辅助改进代码。如果没有问题，请返回原代码块。
-
+    你是一名数学优化问题与代码评估专家，请检查判断生成的代码{code_block}是否存在问题，
+    是否正确的标准包括：
+    1.代码是否与建模参数{modeling_parameters}匹配，
+    2.代码是否存在语法运行问题。
+    如果错误请按照格式请输出0，并给出修改意见。如果正确请按照格式输出1，并给出解释。
+    请严格按照以下JSON Schema{json_shema} 输出评估结果以及修改意见与评论
     """
   
-  refine_template: |
+  code_refine_template: |
     """
-    你是一个代码改进专家，请根据评估者提出的意见 {comment} 对代码块 {code_block} 进行更新，并重新输出更新后的代码块。
+    你是一个代码生成专家，请根据评估者提出的意见 {advices}和建模参数{modeling_parameter} 对代码块 {code_block} 进行更新，并重新输出更新后的代码块。
 
     请输出更新后的代码，example output format:
 
@@ -101,6 +117,7 @@ prompt_templates:
 
    
     ```
+    请注意修改代码输出时不要省略任何代码，完整的输出所有代码
     """
 
 
@@ -157,21 +174,25 @@ json_schemas:
           },
       }
     }
-  modeling_exp_schema: |
+  modeling_para_schema: |
     {
       "type": "object",
       "properties": {
-          "obj": {
+          "objective_function": {
           "type": "string",
           "description": "目标函数，minimize or maximize c P"
           },
-          "decision variable": {
+          "decision_variable": {
           "type": "string",
           "description": "决策变量"
           },
           "constraint_expression": {
           "type": "object",
           "description": "约束条件表达式，以一个dictionary的形式输出，包含了所有constraint的表达式"
+          },
+          "constant_value": {
+          "type": "string",
+          "description": "所有常数变量的具体数值，包括实时电价c，持续时长(in hours)T,所需电量P_{req}以及用户预算C_{budget},"
           },
           "variable_explanation": {
           "type": "string",
@@ -180,7 +201,7 @@ json_schemas:
       }
     }
 
-  modeling_value_schema: |
+  modeling_val_schema: |
     {
       "type": "object",
       "properties": {
@@ -198,19 +219,33 @@ json_schemas:
           }
       }
     }
+  modeling_check_schema: |
+    {
+    "type": "object",
+    "properties": {
+    "PredictionResult": {
+      "type": "number",
+      "description": "check的结果，正确的话输出1,存在问题的话为0"
+    },
+    "comment": {
+      "type": "string",
+      "description": "对于预测结果(1 or 0)的解释和修改意见"
+    }
+    }
+    }
 
 math_problem:
   problem_1: |
     min $c P$,
     subject to:
 
-    1. $\sum_{i=1}^{T} t^{1}_i$  $\leq T$
-    2. $P= \sum_{i=1}^{T} x_{f} t^{1}_{i} \geq P_{req}$
+    1. $\sum_{i=1}^{T} t^{f}_i$  $\leq T$
+    2. $P= \sum_{i=1}^{T} x_{f} t^{f}_{i} \geq P_{req}$
     3. $C\leq C_b$
 
     where $c$ is real time changing electricity price, and dim(c) = T, and
-    $t_1$ is time for fast charging, $t^{1}_{i}$ = [0,1], $0\leq i \leq T$, and $T = dim(t^1)$, and
-    $x_f$ is fast charging power, and
+    $t^f$ is time for fast charging, $t^{f}_{i}$ = [0,1], $0\leq i \leq T$, and $T = dim(t^f})$, and
+    $x_f$ is a constant fast charging power, and
     $P_{req}$ is required energy for charging, and
     $C\leq C_b$, where $C_{b}$ is the budget of user
 
@@ -218,12 +253,23 @@ math_problem:
     min $c P$,
     subject to:
 
-    1. $\sum_{i=1}^{T} t^{2}_i$  $\leq T$
-    2. $P= \sum_{i=1}^{T} x_{s} t^{2}_{i} \geq P_{req}$
+    1. $\sum_{i=1}^{T} t^{s}_i$  $\leq T$
+    2. $P= \sum_{i=1}^{T} x_{s} t^{s}_{i} \geq P_{req}$
     3. $C\leq C_b$
 
     where $c$ is real time changing electricity price, and dim(c) = T, and
-    $t_2$ is time for slow charging $t^{2}_{i}$ = [0,1], $0\leq i \leq T$, and $T = dim(t^2)$, and
-    $x_s$ is slow charging power, and
+    $t^s$ is time for slow charging $t^{s}_{i}$ = [0,1], $0\leq i \leq T$, and $T = dim(t^s)$, and
+    $x_s$ is a constant slow charging power, and
     $P_{req}$ is required energy for charging, and
     $C\leq C_b$, where $C_{b}$ is the budget of user
+
+  benchmark_problem1: |
+    \[
+    \begin{aligned}
+    \min_{x} & \quad w^\top x \\
+    \text{s.t.} & \quad -\Delta T \cdot \mathbf{1}^\top x \leq -E_\text{req}, \\
+           & \quad 0 \leq x \leq P_\text{max},
+    \end{aligned}
+    \]
+    
+    where \( x \in \mathbb{R}^n \) is the decision variable representing the charging power at each time step, \( w \in \mathbb{R}^n \) is the vector of electricity prices for the charging period, \( \Delta T \) is the duration (in hours) of each time step, \( \mathbf{1} \) is a vector of ones of size \( n \), \( E_\text{req} \) is the total energy required for charging (in kWh), and \( P_\text{max} \) is the maximum allowable charging power at any time step. The constraints ensure that the total energy delivered over the charging period satisfies the energy requirement (\( -\Delta T \cdot \mathbf{1}^\top x \leq -E_\text{req} \)), and that the charging power at each step stays within the bounds (\( 0 \leq x_i \leq P_\text{max}, \ \forall i = 1, \dots, n \)).

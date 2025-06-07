@@ -1,5 +1,4 @@
 
-import yaml
 from BaseAgent import BaseAgent
 from langchain_core.prompts import PromptTemplate
 from langchain_community.document_loaders.csv_loader import CSVLoader

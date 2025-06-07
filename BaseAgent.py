@@ -38,11 +38,14 @@ class BaseAgent:
     
     # Search for the pattern in the response
         action_match = PATTERN.search(response)
-    
+        #print(action_match)
         if action_match is not None:
         # Extract the matched JSON text and strip any leading/trailing whitespace
             json_object = action_match.group(1).strip()
-            return eval(json_object)
+            if type(json_object) == str:
+                #print("提取出的：",json_object)
+                return eval(json_object)
+            return json_object
         # Try to parse the JSON text into a Python object
         return None
     
